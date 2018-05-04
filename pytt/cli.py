@@ -27,6 +27,10 @@ def main():
     
     if args.command == 'cat-file':
         pytt.cat_file(args.object)
+    elif args.command == 'hash-object':
+        pytt.hash_object(args.content, args.write)
+    else:
+        print('unknown command %' % args.command)
 
 
 def _parse_args():
@@ -35,8 +39,15 @@ def _parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     subparsers = parser.add_subparsers(dest='command')
-    command_parser = subparsers.add_parser('cat-file')
-    command_parser.add_argument('object')
+
+    hash_obj = subparsers.add_parser('hash-object')
+    hash_obj.add_argument('content')
+    hash_obj.add_argument('-w', '--write',
+                          action='store_true',
+                          help='save the object as well')
+
+    cat_file = subparsers.add_parser('cat-file')
+    cat_file.add_argument('object')
 
     parser.add_argument(
         '-l',
