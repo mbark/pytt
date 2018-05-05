@@ -29,6 +29,8 @@ def main():
         pytt.cat_file(args.object)
     elif args.command == 'hash-object':
         pytt.hash_object(args.content, args.write)
+    elif args.command == 'ls-files':
+        pytt.ls_files()
     else:
         print('unknown command %' % args.command)
 
@@ -48,6 +50,8 @@ def _parse_args():
 
     cat_file = subparsers.add_parser('cat-file')
     cat_file.add_argument('object')
+    
+    ls_files = subparsers.add_parser('ls-files')
 
     parser.add_argument(
         '-l',
