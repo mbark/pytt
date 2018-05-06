@@ -22,3 +22,13 @@ $ ./pytt/cli.py -l info ls-files
 1000644 b'966c4f7af8cb61660e062c41769e55f93e2dd105' b'0'        b'readme.md'
 $ git ls-files -s # compare output
 ```
+
+
+## TODO
+- [x] `cat-file`
+- [x] `hash-object`
+- [x] `ls-files`
+- [ ] `update-index`
+- [ ] `write-tree`
+- [ ] `commit-tree`
+- [ ] `update-ref`
