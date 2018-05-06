@@ -23,8 +23,6 @@ def main():
     args = _parse_args()
     _set_up_logging(args)
     
-    log.debug(args)
-    
     if args.command == 'cat-file':
         pytt.cat_file(args.object)
     elif args.command == 'hash-object':
