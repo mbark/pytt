@@ -52,26 +52,33 @@ def hash_object(content, write):
        with open(path, 'wb') as f:
            f.write(zlib_content)
            
-           
+
 def ls_files():
     with open('.git/index', 'rb') as f:
         content = f.read()
         
-    def hex (i, j): return codecs.encode(content[i:j], 'hex_codec')
+    def hexer(start):
+        def hex (i,j): return codecs.encode(content[start+i:start+j], 'hex_codec')
+        return hex
+           
+    hex = hexer(0)
     
-    index = bitstring.BitArray(content)
+    files = int(hex(8, 12), 10)
     
     log.debug(""" index file:
 DIRC: %s
 Version: %s
 File count: %s
-""" % (content[:4], hex(4, 8), hex(8, 12)))
+""" % (content[:4], hex(4, 8), files))
     
-    mode = bitstring.BitArray(content[36:40])[16:]
-    length = int(hex(72, 74)[1:], 10)
-    padding = (8 - (7 % 8)) % 8
-    
-    log.debug(""" index entry #0:
+    position = 12
+    for i in range(0, files):
+        size = 62
+        hex = hexer(position)
+
+        mode = bitstring.BitArray(content[position+24:position+28])[16:]
+        
+        log.debug(""" index entry #%s:
 ctime: %s
 mtime: %s
 device: %s
@@ -84,7 +91,24 @@ GID: %s
 File size: %s
 Entry SHA-1: %s
 Flags: %s
+""" % (i, hex(0, 8), hex(8, 16), hex(16, 20), hex(20, 24), mode[:4].bin, mode[7:].oct, hex(28, 32), hex(32, 36), hex(36, 40), hex(40, 60), hex(60, 62)[:1]))
+        
+        length = int(hex(60, 62)[1:], 16)
+        padding = (8 - (size+length % 8)) % 8
+        
+        file = content[position+size:]
+
+        log.debug(""" index entry (file info):
 Length: %s
-Index SHA-1: %s
+Name: %s
 Remaining (null-terminated): %s
-""" % (hex(12, 20), hex(20, 28), hex(28, 32), hex(32, 36), mode[:4].bin, mode[7:].oct, hex(40, 44), hex(44, 48), hex(48, 52), hex(52, 72), hex(72, 74)[:1], length, content[74:74+length], content[74+length:74+length+padding]))
+    """ % (length, file[:length], file[length:length+padding]))
+        
+        print('%s%s %s %s\t%s' % (mode[:4].bin, mode[7:].oct, hex(40, 60), hex(60, 62)[:1], file[:length]))
+        position = position + size + length + padding
+
+    log.debug('checksum: %s', bitstring.BitArray(content[-20:]).hex)
+    log.debug('remaining: %s, size: %s', content[position:], len(content[position:]))
+    if(len(content[position:]) > 20):
+        log.debug('extensions (ignoring parsing these): %s', content[position:-20])
+        return
