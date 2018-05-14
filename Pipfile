@@ -3,6 +3,9 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pylint = "*"
+"autopep8" = "*"
+rope = "*"
 
 [packages]
 colorlog = "*"

@@ -6,7 +6,7 @@ import logging
 import pathlib
 import bitstring
 
-from index import Index
+from index import Index, Entry
 
 log = logging.getLogger('pytt')
 
@@ -35,23 +35,23 @@ def cat_file(obj):
 
 
 def hash_object(content, write):
-   header = 'blob %d\0' % len(content)
-   obj_content = header + content
-   log.debug(obj_content)
+    header = 'blob %d\0' % len(content)
+    obj_content = header + content
+    log.debug(obj_content)
 
-   sha = hashlib.sha1(obj_content.encode())
+    sha = hashlib.sha1(obj_content.encode())
 
-   print(sha.hexdigest())
+    print(sha.hexdigest())
 
-   if write:
-       zlib_content = zlib.compress(obj_content.encode())
-       log.debug(zlib_content)
+    if write:
+        zlib_content = zlib.compress(obj_content.encode())
+        log.debug(zlib_content)
 
-       path = _path(sha.hexdigest())
-       pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
+        path = _path(sha.hexdigest())
+        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
 
-       with open(path, 'wb') as f:
-           f.write(zlib_content)
+        with open(path, 'wb') as f:
+            f.write(zlib_content)
 
 
 def ls_files():
@@ -60,4 +60,14 @@ def ls_files():
 
     index = Index(content)
     for entry in index.entries:
-        print('%s%s %s %s\t%s' % (entry.mode_type, entry.mode_permissions, entry.sha1, entry.stage_flag, entry.name))
+        # why the -1? Well the mode type is 1000, 1010 or 1100 and
+        # permissions 0755 or 0644 so git decides to cut a 0 when
+        # concatenating them.
+        print('%s%s %s %s\t%s' % (
+            bin(entry.mode_type)[2:-1], oct(entry.mode_permissions)[2:], entry.sha1, entry.stage_flag, entry.name))
+
+
+def update_index(mode, sha, filename):
+    entry = Entry(new=True, mode=mode, sha=sha, filename=filename)
+    entry.pack()
+    print('TODO')
