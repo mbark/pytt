@@ -17,31 +17,52 @@ class Index:
 
     def __init__(self, content):
         size = struct.calcsize(self.FMT)
-        _, self.version, self.file_count = _unpack_slice(
+        self.header, self.version, self.file_count = _unpack_slice(
             self.FMT, content)
 
-        self.entries = []
+        self.entries = {}
         offset = size
         for i in range(0, self.file_count):
             entry = Entry(new=False, content=content, offset=offset)
-            self.entries.append(entry)
+            self.entries[entry.name] = entry
             offset += entry.size
 
         # The last 20 bytes are always a checksum
-        self.checksum = ConstBitStream(content[-20:]).hex
+        self.checksum = ConstBitStream(content[-20:])
 
         # TODO: extensions should be mentioned here
+
+    def append(self, new_entry):
+        self.entries[new_entry.name] = new_entry
+
+    def pack(self):
+        packed = BitArray('')
+
+        packed_index = struct.pack(self.FMT, self.header, self.version, len(self.entries))
+        packed.append(packed_index)
+
+        for _, entry in sorted(self.entries.items()):
+            packed.append(entry.pack())
+
+        packed.append(self.checksum)
+        return packed.bytes
 
 
 class Entry:
     ENTRY_FMT = '>iiiiii2x2siii20s2s'
-    
+
     def __init__(self, new=False, **kwargs):
         if new:
             self.new(**kwargs)
         else:
             self.from_string(**kwargs)
-    
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
     def from_string(self, content, offset):
         unpacked = _unpack_slice(self.ENTRY_FMT, content, offset)
 
@@ -66,7 +87,7 @@ class Entry:
         self.mode_type = mode.read(4).uint
         mode.pos += 3  # 3 unused bytes to throw away
         self.mode_permissions = mode.read(9).uint
-        
+
         log.debug('mode_type: %s, mode_permissions: %s', self.mode_type, self.mode_permissions)
 
         self.uid = static.uid
@@ -81,7 +102,7 @@ class Entry:
         self.extended_flag = flags.read(1).int
         self.stage_flag = flags.read(2).int
         self.length = flags.read(12).int
-        
+
         log.debug('stage_flag: %s', self.stage_flag)
 
         static_size = struct.calcsize(self.ENTRY_FMT)
@@ -103,10 +124,10 @@ class Entry:
         self.device = stat.st_dev
         # the inode can be too large to pack so we just take the first 4 bytes and save them
         self.inode = struct.unpack('i', struct.pack('l', stat.st_ino)[:4])[0]
-        
+
         self.mode_type = int('%s0' % mode[:3], 2)
         self.mode_permissions = int(mode[3:], 8)
-        
+
         self.uid = stat.st_uid
         self.gid = stat.st_gid
         self.file_size = stat.st_size
@@ -117,16 +138,16 @@ class Entry:
         self.extended_flag = 0
         self.stage_flag = 0
         self.length = len(filename)
-        
+
         self.name = filename
-    
+
     def pack(self):
         mode_b = BitArray('')
         mode_b.append(Bits(uint=self.mode_type, length=4))
         mode_b.append(Bits(uint=0, length=3))
         mode_b.append(Bits(uint=self.mode_permissions, length=9))
         log.debug(len(mode_b))
-        
+
         log.debug(mode_b.bytes)
 
         sha1 = bytearray.fromhex(self.sha1)
@@ -136,7 +157,7 @@ class Entry:
         flags.append(Bits(uint=self.extended_flag, length=1))
         flags.append(Bits(uint=self.stage_flag, length=2))
         flags.append(Bits(uint=len(self.name), length=12))
-        
+
         fmt = '%s%ds' % (self.ENTRY_FMT, len(self.name))
         padding = (8 - (struct.calcsize(fmt) % 8)) % 8
         fmt = '%s%dx' % (fmt, padding)

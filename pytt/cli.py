@@ -38,7 +38,7 @@ def main():
     elif args.command == 'update-ref':
         print('TODO')
     else:
-        print('unknown command %' % args.command)
+        print('unknown command %s' % args.command)
 
 
 def _parse_args():

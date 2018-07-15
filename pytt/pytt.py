@@ -11,12 +11,16 @@ from index import Index, Entry
 log = logging.getLogger('pytt')
 
 
-def _path(sha):
-    return '.git/objects/%s/%s' % (sha[:2], sha[2:])
+def _git_path(path):
+    return '.git/%s' % path
+
+
+def _object_path(sha):
+    return _git_path('objects/%s/%s' % (sha[:2], sha[2:]))
 
 
 def cat_file(obj):
-    with open(_path(obj), 'rb') as f:
+    with open(_object_path(obj), 'rb') as f:
         content = f.read()
 
     log.debug(content)
@@ -47,7 +51,7 @@ def hash_object(content, write):
         zlib_content = zlib.compress(obj_content.encode())
         log.debug(zlib_content)
 
-        path = _path(sha.hexdigest())
+        path = _object_path(sha.hexdigest())
         pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, 'wb') as f:
@@ -55,7 +59,7 @@ def hash_object(content, write):
 
 
 def ls_files():
-    with open('.git/index', 'rb') as f:
+    with open(_git_path('index'), 'rb') as f:
         content = f.read()
 
     index = Index(content)
@@ -69,5 +73,15 @@ def ls_files():
 
 def update_index(mode, sha, filename):
     entry = Entry(new=True, mode=mode, sha=sha, filename=filename)
-    entry.pack()
-    print('TODO')
+
+    with open(_git_path('index'), 'rb') as f:
+        content = f.read()
+    index = Index(content)
+    index.append(entry)
+
+    packed = index.pack()
+    log.debug(content)
+    log.debug(packed)
+
+    with open(_git_path('index'), 'wb') as f:
+        f.write(packed)

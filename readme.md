@@ -6,7 +6,7 @@ $ ./pytt/cli.py cat-file 3c7b109738e60831c50f5680dfe664120367ddba
 
 ```shell
 $ ./pytt/cli.py hash-object 'what is up, doc?' -w
-# ...
+bd9dbf5aae1a3862dd1526723246b20206e5fc37
 $ git cat-file -p bd9dbf5aae1a3862dd1526723246b20206e5fc37
 what is up, doc?
 ```
@@ -25,12 +25,26 @@ $ ./pytt/cli.py -l info ls-files
 $ git ls-files -s # literally the same
 ```
 
+``` shell
+$ ./pytt/cli.py hash-object 'what is up, doc?' -w
+# ...
+
+$ ./pytt/cli.py update-index 100644 bd9dbf5aae1a3862dd1526723246b20206e5fc37 afile
+# ...
+$ git status
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#        new file:   afile
+#
+```
+
 
 ## TODO
 - [x] `cat-file`
 - [x] `hash-object`
 - [x] `ls-files`
-- [ ] `update-index`
+- [x] `update-index`
 - [ ] `write-tree`
 - [ ] `commit-tree`
 - [ ] `update-ref`
