@@ -11,7 +11,6 @@ class Tree:
         else:
             self.from_string(**kwargs)
 
-
     def from_string(self, content):
         bits = ConstBitStream(content)
         self.entries = []

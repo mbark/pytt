@@ -45,6 +45,15 @@ $ git cat-file -p 23a890411c06cd26c7e9e86d13d23197b9b06967
 # ...
 ```
 
+``` shell
+$ ./pytt/cli.py cat-file $(git rev-parse HEAD)
+# tree e227e810aa558bae7324940e521d031ed35b6cdc
+# author Martin Barksten <martin.barksten@gmail.com> 1531833735 +0200
+# committer Martin Barksten <martin.barksten@gmail.com> 1531833735 +0200
+
+# foo
+```
+
 
 ## TODO
 - [x] `cat-file`

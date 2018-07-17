@@ -7,6 +7,7 @@ import pathlib
 
 import index
 import tree
+import commit
 
 log = logging.getLogger('pytt')
 
@@ -28,20 +29,24 @@ def cat_file(obj):
     decompressed = zlib.decompress(content)
     log.debug(decompressed)
 
-    if decompressed.startswith(b'commit'):
-        print(decompressed.decode())
-    else:
-        obj = decompressed.split(b'\0', 1)[-1]
-        if decompressed.startswith(b'tree'):
-            tree_object = tree.Tree(new=False, content=obj)
-            for entry in tree_object.entries:
-                print('%s %s %s\t%s' % (
-                    entry.mode.decode(), entry.object_type, entry.sha1, entry.name))
-        elif decompressed.startswith(b'blob'):
-            try:
-                print(obj.decode())
-            except UnicodeDecodeError:
-                print(obj)
+    obj = decompressed.split(b'\0', 1)[-1]
+
+    if decompressed.startswith(b'blob'):
+        try:
+            print(obj.decode())
+        except UnicodeDecodeError:
+            print(obj)
+    elif decompressed.startswith(b'tree'):
+        tree_object = tree.Tree(new=False, content=obj)
+        for entry in tree_object.entries:
+            print('%s %s %s\t%s' % (
+                entry.mode.decode(), entry.object_type, entry.sha1, entry.name))
+    elif decompressed.startswith(b'commit'):
+        commit_object = commit.Commit(new=False, content=obj)
+        print('tree %s' % commit_object.tree.decode())
+        print('author %s' % b' '.join(commit_object.author).decode())
+        print('committer %s' % b' '.join(commit_object.committer).decode())
+        print('\n%s' % commit_object.message.decode())
 
 
 
