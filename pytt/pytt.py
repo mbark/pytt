@@ -44,6 +44,8 @@ def cat_file(obj):
     elif decompressed.startswith(b'commit'):
         commit_object = commit.Commit(new=False, content=obj)
         print('tree %s' % commit_object.tree.decode())
+        for parent in commit_object.parents:
+            print('parent %s' % parent.decode())
         print('author %s' % b' '.join(commit_object.author).decode())
         print('committer %s' % b' '.join(commit_object.committer).decode())
         print('\n%s' % commit_object.message.decode())

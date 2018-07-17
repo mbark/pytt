@@ -20,13 +20,18 @@ class Commit:
         lines[0].bytepos += len('tree ')
         self.tree = lines[0].read('bytes:40')
 
-        # TODO: we can optionally specify one or several parents
+        index = 1
+        self.parents = []
+        while(lines[index].startswith(b'\nparent')):
+            lines[index].bytepos += len('\nparent ')
+            self.parents.append(lines[index].read('bytes:40'))
+            index += 1
 
-        self.author = self._read_name_line(lines[1], 'author')
-        self.committer = self._read_name_line(lines[2], 'committer')
+        self.author = self._read_name_line(lines[index], 'author')
+        self.committer = self._read_name_line(lines[index+1], 'committer')
 
         # ignore prefix \n
-        self.message = lines[4][8:].bytes
+        self.message = lines[index+3][8:].bytes
         log.debug(self.message)
 
     def _read_name_line(self, line, prefix):
