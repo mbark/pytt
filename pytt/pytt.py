@@ -4,9 +4,9 @@ import codecs
 import hashlib
 import logging
 import pathlib
-import bitstring
 
-from index import Index, Entry
+import index
+import tree
 
 log = logging.getLogger('pytt')
 
@@ -30,25 +30,32 @@ def cat_file(obj):
 
     if decompressed.startswith(b'commit'):
         print(decompressed.decode())
-    elif decompressed.startswith(b'tree') or decompressed.startswith(b'blob'):
-        object = decompressed.split(b'\0', 1)[-1]
-        try:
-            print(object.decode())
-        except UnicodeDecodeError:
-            print(object)
+    else:
+        obj = decompressed.split(b'\0', 1)[-1]
+        if decompressed.startswith(b'tree'):
+            tree_object = tree.Tree(new=False, content=obj)
+            for entry in tree_object.entries:
+                print('%s %s %s\t%s' % (
+                    entry.mode.decode(), entry.object_type, entry.sha1, entry.name))
+        elif decompressed.startswith(b'blob'):
+            try:
+                print(obj.decode())
+            except UnicodeDecodeError:
+                print(obj)
 
 
-def hash_object(content, write):
-    header = 'blob %d\0' % len(content)
+
+def hash_object(content, write=False, object_type='blob'):
+    header = '%s %d\0' % (object_type, len(content))
+    header = header.encode()
     obj_content = header + content
     log.debug(obj_content)
 
-    sha = hashlib.sha1(obj_content.encode())
-
+    sha = hashlib.sha1(obj_content)
     print(sha.hexdigest())
 
     if write:
-        zlib_content = zlib.compress(obj_content.encode())
+        zlib_content = zlib.compress(obj_content)
         log.debug(zlib_content)
 
         path = _object_path(sha.hexdigest())
@@ -62,8 +69,8 @@ def ls_files():
     with open(_git_path('index'), 'rb') as f:
         content = f.read()
 
-    index = Index(content)
-    for entry in index.entries:
+    idx = index.Index(content)
+    for _, entry in idx.entries.items():
         # why the -1? Well the mode type is 1000, 1010 or 1100 and
         # permissions 0755 or 0644 so git decides to cut a 0 when
         # concatenating them.
@@ -72,16 +79,33 @@ def ls_files():
 
 
 def update_index(mode, sha, filename):
-    entry = Entry(new=True, mode=mode, sha=sha, filename=filename)
+    entry = index.Entry(new=True, mode=mode, sha=sha, filename=filename)
 
     with open(_git_path('index'), 'rb') as f:
         content = f.read()
-    index = Index(content)
-    index.append(entry)
+    idx = index.Index(content)
+    idx.append(entry)
 
-    packed = index.pack()
+    packed = idx.pack()
     log.debug(content)
     log.debug(packed)
 
     with open(_git_path('index'), 'wb') as f:
         f.write(packed)
+
+
+def write_tree():
+    with open(_git_path('index'), 'rb') as f:
+        content = f.read()
+
+    idx = index.Index(content)
+
+    tree_entries = []
+    for _, entry in idx.entries.items():
+        tree_entries.append(tree.Entry(new=True, mode_type=entry.mode_type, mode_permissions=entry.mode_permissions, sha=entry.sha1, name=entry.name))
+
+    object_tree = tree.Tree(new=True, entries=tree_entries)
+    content = object_tree.pack()
+
+    log.debug(content)
+    hash_object(content, write=True, object_type='tree')

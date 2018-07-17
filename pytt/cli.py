@@ -26,13 +26,13 @@ def main():
     if args.command == 'cat-file':
         pytt.cat_file(args.object)
     elif args.command == 'hash-object':
-        pytt.hash_object(args.content, args.write)
+        pytt.hash_object(args.content.encode(), args.write)
     elif args.command == 'ls-files':
         pytt.ls_files()
     elif args.command == 'update-index':
         pytt.update_index(args.mode, args.sha, args.filename)
     elif args.command == 'write-tree':
-        print('TODO')
+        pytt.write_tree()
     elif args.command == 'commit-tree':
         print('TODO')
     elif args.command == 'update-ref':
