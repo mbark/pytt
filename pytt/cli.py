@@ -36,7 +36,7 @@ def main():
     elif args.command == 'commit-tree':
         pytt.commit_tree(args.tree, args.message, args.parent)
     elif args.command == 'update-ref':
-        print('TODO')
+        pytt.update_ref(args.ref, args.sha)
     else:
         print('unknown command %s' % args.command)
 
@@ -65,12 +65,15 @@ def _parse_args():
     update_index.add_argument('filename')
 
     write_tree = subparsers.add_parser('write-tree')
-    commit_tree = subparsers.add_parser('commit-tree')
 
+    commit_tree = subparsers.add_parser('commit-tree')
     commit_tree.add_argument('tree', help='tree to commit')
     commit_tree.add_argument('-p', '--parent', help='commit parent')
     commit_tree.add_argument('-m', '--message', help='commit message')
+
     update_ref = subparsers.add_parser('update-ref')
+    update_ref.add_argument('ref', help='the ref to update')
+    update_ref.add_argument('sha', help='the sha to set the ref to')
 
     parser.add_argument(
         '-l',

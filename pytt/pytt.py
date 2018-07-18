@@ -123,3 +123,8 @@ def commit_tree(tree, message, parent):
     content = c.pack()
 
     hash_object(content, write=True, object_type='commit')
+
+
+def update_ref(ref, sha):
+    with open(_git_path(ref), 'w') as f:
+        f.write(sha)

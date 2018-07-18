@@ -55,10 +55,20 @@ $ ./pytt/cli.py cat-file $(git rev-parse HEAD)
 ```
 
 ``` shell
-$ ./pytt/cli.py commit-tree $(git rev-parse HEAD) -m 'foo: message' -p $(git rev-parse HEAD)
+$ ./pytt/cli.py write-tree
+# 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+$ ./pytt/cli.py commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m 'foo: message' -p $(git rev-parse HEAD)
 # 6f0607cd1706763df9f2200607124386cd89efb9
 $ ./pytt/cli.py cat-file 6f0607cd1706763df9f2200607124386cd89efb9
 # ...
+```
+
+``` shell
+$ ./pytt/cli.py write-tree
+$ ./pytt/cli.py commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m 'foo: message' -p $(git rev-parse HEAD)
+# 6f0607cd1706763df9f2200607124386cd89efb9
+$ ./pytt/cli.py update-ref refs/heads/another 6f0607cd1706763df9f2200607124386cd89efb9
+# Switched to branch 'another'
 ```
 
 
@@ -69,4 +79,4 @@ $ ./pytt/cli.py cat-file 6f0607cd1706763df9f2200607124386cd89efb9
 - [x] `update-index`
 - [x] `write-tree`
 - [x] `commit-tree`
-- [ ] `update-ref`
+- [x] `update-ref`
