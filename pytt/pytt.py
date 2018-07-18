@@ -46,8 +46,8 @@ def cat_file(obj):
         print('tree %s' % commit_object.tree.decode())
         for parent in commit_object.parents:
             print('parent %s' % parent.decode())
-        print('author %s' % b' '.join(commit_object.author).decode())
-        print('committer %s' % b' '.join(commit_object.committer).decode())
+        print('author %s' % commit_object.author)
+        print('committer %s' % commit_object.committer)
         print('\n%s' % commit_object.message.decode())
 
 
@@ -116,3 +116,10 @@ def write_tree():
 
     log.debug(content)
     hash_object(content, write=True, object_type='tree')
+
+
+def commit_tree(tree, message, parent):
+    c = commit.Commit(new=True, tree=tree, message=message, parent=parent)
+    content = c.pack()
+
+    hash_object(content, write=True, object_type='commit')

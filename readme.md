@@ -54,6 +54,13 @@ $ ./pytt/cli.py cat-file $(git rev-parse HEAD)
 # foo
 ```
 
+``` shell
+$ ./pytt/cli.py commit-tree $(git rev-parse HEAD) -m 'foo: message' -p $(git rev-parse HEAD)
+# 6f0607cd1706763df9f2200607124386cd89efb9
+$ ./pytt/cli.py cat-file 6f0607cd1706763df9f2200607124386cd89efb9
+# ...
+```
+
 
 ## TODO
 - [x] `cat-file`
@@ -61,5 +68,5 @@ $ ./pytt/cli.py cat-file $(git rev-parse HEAD)
 - [x] `ls-files`
 - [x] `update-index`
 - [x] `write-tree`
-- [ ] `commit-tree`
+- [x] `commit-tree`
 - [ ] `update-ref`
