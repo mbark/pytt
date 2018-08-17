@@ -57,14 +57,14 @@ def _parse_args():
     cat_file = subparsers.add_parser('cat-file')
     cat_file.add_argument('object')
 
-    ls_files = subparsers.add_parser('ls-files')
+    subparsers.add_parser('ls-files')
 
     update_index = subparsers.add_parser('update-index')
     update_index.add_argument('mode')
     update_index.add_argument('sha')
     update_index.add_argument('filename')
 
-    write_tree = subparsers.add_parser('write-tree')
+    subparsers.add_parser('write-tree')
 
     commit_tree = subparsers.add_parser('commit-tree')
     commit_tree.add_argument('tree', help='tree to commit')

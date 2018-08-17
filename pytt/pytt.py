@@ -5,9 +5,9 @@ import hashlib
 import logging
 import pathlib
 
-import index
-import tree
-import commit
+from index import Index
+from object import Tree, Commit
+
 
 log = logging.getLogger('pytt')
 
@@ -37,19 +37,25 @@ def cat_file(obj):
         except UnicodeDecodeError:
             print(obj)
     elif decompressed.startswith(b'tree'):
-        tree_object = tree.Tree(new=False, content=obj)
+        tree_object = Tree.from_string(obj)
         for entry in tree_object.entries:
+            mode = entry.mode.decode()
+            if mode == '40000':
+                mode = '0' + mode
+                object_type = 'tree'
+            else:
+                object_type = 'blob'
+
             print('%s %s %s\t%s' % (
-                entry.mode.decode(), entry.object_type, entry.sha1, entry.name))
+                mode, object_type, entry.sha1, entry.name.decode()))
     elif decompressed.startswith(b'commit'):
-        commit_object = commit.Commit(new=False, content=obj)
+        commit_object = Commit.from_string(obj)
         print('tree %s' % commit_object.tree.decode())
         for parent in commit_object.parents:
             print('parent %s' % parent.decode())
         print('author %s' % commit_object.author)
         print('committer %s' % commit_object.committer)
         print('\n%s' % commit_object.message.decode())
-
 
 
 def hash_object(content, write=False, object_type='blob'):
@@ -76,7 +82,7 @@ def ls_files():
     with open(_git_path('index'), 'rb') as f:
         content = f.read()
 
-    idx = index.Index(content)
+    idx = Index(content)
     for _, entry in idx.entries.items():
         # why the -1? Well the mode type is 1000, 1010 or 1100 and
         # permissions 0755 or 0644 so git decides to cut a 0 when
@@ -86,11 +92,11 @@ def ls_files():
 
 
 def update_index(mode, sha, filename):
-    entry = index.Entry(new=True, mode=mode, sha=sha, filename=filename)
+    entry = Index.Entry(new=True, mode=mode, sha=sha, filename=filename)
 
     with open(_git_path('index'), 'rb') as f:
         content = f.read()
-    idx = index.Index(content)
+    idx = Index(content)
     idx.append(entry)
 
     packed = idx.pack()
@@ -105,13 +111,14 @@ def write_tree():
     with open(_git_path('index'), 'rb') as f:
         content = f.read()
 
-    idx = index.Index(content)
+    idx = Index(content)
 
     tree_entries = []
     for _, entry in idx.entries.items():
-        tree_entries.append(tree.Entry(new=True, mode_type=entry.mode_type, mode_permissions=entry.mode_permissions, sha=entry.sha1, name=entry.name))
+        tree_entries.append(Tree.Entry(mode_type=entry.mode_type,
+                                       mode_permissions=entry.mode_permissions, sha=entry.sha1, name=entry.name))
 
-    object_tree = tree.Tree(new=True, entries=tree_entries)
+    object_tree = Tree(tree_entries)
     content = object_tree.pack()
 
     log.debug(content)
@@ -119,7 +126,7 @@ def write_tree():
 
 
 def commit_tree(tree, message, parent):
-    c = commit.Commit(new=True, tree=tree, message=message, parent=parent)
+    c = Commit.create(tree, message, parent)
     content = c.pack()
 
     hash_object(content, write=True, object_type='commit')
