@@ -70,13 +70,3 @@ $ ./pytt/cli.py commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m 'foo: me
 $ ./pytt/cli.py update-ref refs/heads/another 6f0607cd1706763df9f2200607124386cd89efb9
 # Switched to branch 'another'
 ```
-
-
-## TODO
-- [x] `cat-file`
-- [x] `hash-object`
-- [x] `ls-files`
-- [x] `update-index`
-- [x] `write-tree`
-- [x] `commit-tree`
-- [x] `update-ref`

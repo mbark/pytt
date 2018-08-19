@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-from bitstring import ConstBitStream, BitArray, Bits
-from functools import reduce
 import logging
+from functools import reduce
+
+from bitstring import BitArray, Bits, ConstBitStream
 
 log = logging.getLogger('pytt')
 
@@ -57,7 +58,7 @@ class Tree:
             return bits.bytes
 
 
-class Person:
+class Author:
     def __init__(self, name=b'Foo Bar', email=b'foo.bar@email.com', date_s=1531840055, date_timezone=b'+0200'):
         self.name = name
         self.email = email
@@ -74,7 +75,10 @@ class Person:
         name = reduce(
             (lambda sum, next: sum + next.bytes), splits[:-3], b'')
 
-        return Person(name, email, date_s, date_timezone)
+        return Author(name, email, date_s, date_timezone)
+
+    def pack(self):
+        return str(self).encode()
 
     def __str__(self):
         return b' '.join([self.name, self.email, str(self.date_s).encode(), self.date_timezone]).decode()
@@ -90,7 +94,7 @@ class Commit:
 
     @classmethod
     def create(cls, tree, message, parent=None):
-        author = Person()
+        author = Author()
         commiter = author
         parents = [] if parent is None else [parent.encode()]
         return Commit(tree.encode(), parents, author, commiter, message.encode())
@@ -110,8 +114,8 @@ class Commit:
             parents.append(lines[index].read('bytes:40'))
             index += 1
 
-        author = Person.from_string(lines[index], 'author')
-        committer = Person.from_string(lines[index+1], 'committer')
+        author = Author.from_string(lines[index], 'author')
+        committer = Author.from_string(lines[index+1], 'committer')
 
         # ignore prefix \n
         message = lines[index+3][8:].bytes
@@ -125,9 +129,9 @@ class Commit:
         for parent in self.parents:
             bits.append(Bits(bytes=b'parent %s\n' % parent))
 
-        bits.append(Bits(bytes=b'author %s\n' % str(self.author).encode()))
+        bits.append(Bits(bytes=b'author %s\n' % self.author.pack()))
         bits.append(Bits(bytes=b'committer %s\n' %
-                         str(self.committer).encode()))
+                         self.committer.pack()))
         bits.append(Bits(bytes=b'\n%s' % self.message))
 
         return bits.bytes

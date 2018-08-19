@@ -6,7 +6,7 @@ import sys
 
 import colorlog
 
-import pytt
+from . import pytt
 
 log = logging.getLogger('pytt')
 log_levels = {
@@ -19,7 +19,7 @@ log_levels = {
 log_names = list(log_levels)
 
 
-def main():
+def run():
     args = _parse_args()
     _set_up_logging(args)
 
@@ -78,7 +78,7 @@ def _parse_args():
     parser.add_argument(
         '-l',
         '--log-level',
-        default=log_names[0],
+        default=log_names[1],
         choices=log_names,
         help='The log level for the client')
 
@@ -95,7 +95,3 @@ def _set_up_logging(args):
 
     log.addHandler(handler)
     log.setLevel(log_levels[args.log_level])
-
-
-if __name__ == "__main__":
-    main()

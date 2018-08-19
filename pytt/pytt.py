@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-import zlib
 import codecs
 import hashlib
 import logging
 import pathlib
+import zlib
 
-from index import Index
-from object import Tree, Commit
-
+from .index import Index
+from .object import Commit, Tree
 
 log = logging.getLogger('pytt')
 
@@ -20,23 +19,24 @@ def _object_path(sha):
     return _git_path('objects/%s/%s' % (sha[:2], sha[2:]))
 
 
+def _index():
+    with open(_git_path('index'), 'rb') as f:
+        return Index(f.read())
+
+
 def cat_file(obj):
     with open(_object_path(obj), 'rb') as f:
-        content = f.read()
+        content = zlib.decompress(f.read())
 
-    log.debug(content)
+    [metadata, obj] = content.split(b'\0', 1)
 
-    decompressed = zlib.decompress(content)
-    log.debug(decompressed)
-
-    obj = decompressed.split(b'\0', 1)[-1]
-
-    if decompressed.startswith(b'blob'):
+    if metadata.startswith(b'blob'):
         try:
             print(obj.decode())
         except UnicodeDecodeError:
+            log.debug('Unable to decode, printing as is')
             print(obj)
-    elif decompressed.startswith(b'tree'):
+    elif metadata.startswith(b'tree'):
         tree_object = Tree.from_string(obj)
         for entry in tree_object.entries:
             mode = entry.mode.decode()
@@ -48,7 +48,7 @@ def cat_file(obj):
 
             print('%s %s %s\t%s' % (
                 mode, object_type, entry.sha1, entry.name.decode()))
-    elif decompressed.startswith(b'commit'):
+    elif metadata.startswith(b'commit'):
         commit_object = Commit.from_string(obj)
         print('tree %s' % commit_object.tree.decode())
         for parent in commit_object.parents:
@@ -58,78 +58,59 @@ def cat_file(obj):
         print('\n%s' % commit_object.message.decode())
 
 
-def hash_object(content, write=False, object_type='blob'):
-    header = '%s %d\0' % (object_type, len(content))
+def hash_object(obj, write=False, object_type='blob'):
+    header = '%s %d\0' % (object_type, len(obj))
     header = header.encode()
-    obj_content = header + content
-    log.debug(obj_content)
+    content = header + obj
 
-    sha = hashlib.sha1(obj_content)
+    sha = hashlib.sha1(content)
     print(sha.hexdigest())
 
     if write:
-        zlib_content = zlib.compress(obj_content)
-        log.debug(zlib_content)
-
         path = _object_path(sha.hexdigest())
         pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, 'wb') as f:
-            f.write(zlib_content)
+            f.write(zlib.compress(content))
 
 
 def ls_files():
-    with open(_git_path('index'), 'rb') as f:
-        content = f.read()
-
-    idx = Index(content)
+    idx = _index()
     for _, entry in idx.entries.items():
         # why the -1? Well the mode type is 1000, 1010 or 1100 and
         # permissions 0755 or 0644 so git decides to cut a 0 when
         # concatenating them.
-        print('%s%s %s %s\t%s' % (
-            bin(entry.mode_type)[2:-1], oct(entry.mode_permissions)[2:], entry.sha1, entry.stage_flag, entry.name))
+        mode = '%s%s' % (bin(entry.mode_type)[
+                         2:-1], oct(entry.mode_permissions)[2:])
+        print('%s %s %s\t%s' % (
+            mode, entry.sha1, entry.stage_flag, entry.name))
 
 
-def update_index(mode, sha, filename):
-    entry = Index.Entry(new=True, mode=mode, sha=sha, filename=filename)
+def update_index(mode, sha, filename): 
+    idx = _index()
 
-    with open(_git_path('index'), 'rb') as f:
-        content = f.read()
-    idx = Index(content)
-    idx.append(entry)
+    idx.append(Index.Entry(new=True, mode=mode, sha=sha, filename=filename))
 
     packed = idx.pack()
-    log.debug(content)
-    log.debug(packed)
-
     with open(_git_path('index'), 'wb') as f:
         f.write(packed)
 
 
 def write_tree():
-    with open(_git_path('index'), 'rb') as f:
-        content = f.read()
-
-    idx = Index(content)
+    idx = _index()
 
     tree_entries = []
     for _, entry in idx.entries.items():
         tree_entries.append(Tree.Entry(mode_type=entry.mode_type,
                                        mode_permissions=entry.mode_permissions, sha=entry.sha1, name=entry.name))
 
-    object_tree = Tree(tree_entries)
-    content = object_tree.pack()
-
-    log.debug(content)
-    hash_object(content, write=True, object_type='tree')
+    tree_object = Tree(tree_entries) 
+    hash_object(tree_object.pack(), write=True, object_type='tree')
 
 
 def commit_tree(tree, message, parent):
-    c = Commit.create(tree, message, parent)
-    content = c.pack()
-
-    hash_object(content, write=True, object_type='commit')
+    c = Commit.create(tree, message, parent) 
+    hash_object(c.pack(), write=True, object_type='commit')
 
 
 def update_ref(ref, sha):
