@@ -13,6 +13,12 @@ log = logging.getLogger('pytt')
 # For reference of how the files are structured, see:
 # https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
 class Index:
+    """The index describes the staging area, i.e. the area which will eventually
+    be constructed into a tree (and typically a commit describing that tree).
+
+    The index contains some metadata as well as a list of all files in the
+    staging area. The index doesn't contain any directories -- only files.
+    """
     FMT = '>4sii'
 
     def __init__(self, content):
@@ -49,6 +55,11 @@ class Index:
         return packed.bytes
 
     class Entry:
+        """An entry describes a single entry in the index.
+
+        The entry contains information about the file that is relevant to git,
+        i.e. the mode, modification time etc.
+        """
         ENTRY_FMT = '>iiiiii2x2siii20s2s'
 
         def __init__(self, new=False, **kwargs):
@@ -123,7 +134,7 @@ class Index:
             if not os.path.isfile(filename):
                 with open(filename, 'w'): pass
 
-            stat = os.stat(filename) 
+            stat = os.stat(filename)
             self.ctime, self.ctime_ns = split_time(stat.st_ctime)
             self.mtime, self.mtime_ns = split_time(stat.st_mtime)
             self.device = stat.st_dev

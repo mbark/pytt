@@ -8,6 +8,13 @@ log = logging.getLogger('pytt')
 
 
 class Tree:
+    """A tree roughly corresponds to a directory containing entries which can be
+    either a blob or a tree.
+
+    The object-structure looks like:
+    [Tree.Entry]
+    """
+
     def __init__(self, entries=[]):
         self.entries = entries
 
@@ -28,6 +35,16 @@ class Tree:
         return bits.bytes
 
     class Entry:
+        """A tree entry contains the mode and name of a tree or blob.
+
+        If the entry describes another tree the mode will be 40000, if it
+        describes a blob it will be one of the valid modes for a blob (but typically
+        100644)
+
+        The object structure looks like:
+        {mode} {name}\\0{object_sha}
+        """
+
         def __init__(self, name, sha, mode=None, mode_type=None, mode_permissions=None):
             if mode_type and mode_permissions:
                 self.mode = Bits(
@@ -58,33 +75,23 @@ class Tree:
             return bits.bytes
 
 
-class Author:
-    def __init__(self, name=b'Foo Bar', email=b'foo.bar@email.com', date_s=1531840055, date_timezone=b'+0200'):
-        self.name = name
-        self.email = email
-        self.date_s = date_s
-        self.date_timezone = date_timezone
-
-    @classmethod
-    def from_string(cls, line, prefix):
-        line.bytepos += len('\n%s ' % prefix)
-        splits = list(line.split(b' ', start=line.pos, bytealigned=True))
-        date_timezone = splits[-1][8:].bytes
-        date_s = splits[-2][8:].bytes
-        email = splits[-3][8:].bytes
-        name = reduce(
-            (lambda sum, next: sum + next.bytes), splits[:-3], b'')
-
-        return Author(name, email, date_s, date_timezone)
-
-    def pack(self):
-        return str(self).encode()
-
-    def __str__(self):
-        return b' '.join([self.name, self.email, str(self.date_s).encode(), self.date_timezone]).decode()
-
-
 class Commit:
+    """A commit is a way of describing a tree and giving that tree a parent.
+
+    A commit contains the sha of the tree it describes, an optional amount of
+    parents (typically only one) as well as a description for the author
+    and commiter. It also has a message describing it.
+
+    The object-structure is:
+
+    tree {tree_sha}
+    [{parent}]
+    author {author_name} <{author_email}> {author_date_seconds} {author_date_timezone}
+    committer {committer_name} <{committer_email}> {committer_date_seconds} {committer_date_timezone}
+
+    {commit message}
+    """
+
     def __init__(self, tree, parents, author, comitter, message):
         self.tree = tree
         self.author = author
@@ -94,7 +101,7 @@ class Commit:
 
     @classmethod
     def create(cls, tree, message, parent=None):
-        author = Author()
+        author = Commit.Author()
         commiter = author
         parents = [] if parent is None else [parent.encode()]
         return Commit(tree.encode(), parents, author, commiter, message.encode())
@@ -114,8 +121,8 @@ class Commit:
             parents.append(lines[index].read('bytes:40'))
             index += 1
 
-        author = Author.from_string(lines[index], 'author')
-        committer = Author.from_string(lines[index+1], 'committer')
+        author = Commit.Author.from_string(lines[index], 'author')
+        committer = Commit.Author.from_string(lines[index+1], 'committer')
 
         # ignore prefix \n
         message = lines[index+3][8:].bytes
@@ -135,6 +142,35 @@ class Commit:
         bits.append(Bits(bytes=b'\n%s' % self.message))
 
         return bits.bytes
+
+    class Author:
+        """An author describes the author or committer field in a git commit.
+        This is a convenience class and doesn't describe a git object.
+        """
+
+        def __init__(self, name=b'Foo Bar', email=b'foo.bar@email.com', date_s=1531840055, date_timezone=b'+0200'):
+            self.name = name
+            self.email = email
+            self.date_s = date_s
+            self.date_timezone = date_timezone
+
+        @classmethod
+        def from_string(cls, line, prefix):
+            line.bytepos += len('\n%s ' % prefix)
+            splits = list(line.split(b' ', start=line.pos, bytealigned=True))
+            date_timezone = splits[-1][8:].bytes
+            date_s = splits[-2][8:].bytes
+            email = splits[-3][8:].bytes
+            name = reduce(
+                (lambda sum, next: sum + next.bytes), splits[:-3], b'')
+
+            return Commit.Author(name, email, date_s, date_timezone)
+
+        def pack(self):
+            return str(self).encode()
+
+        def __str__(self):
+            return b' '.join([self.name, self.email, str(self.date_s).encode(), self.date_timezone]).decode()
 
 
 def _read_till(bits, delim):
