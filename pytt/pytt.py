@@ -23,9 +23,13 @@ def _resolve_object_sha(sha):
     """
     directory = sha[:2]
     filename = sha[2:]
+    
+    git_dir = '.git/objects/%s' % directory
+    if not os.path.isdir(git_dir):
+        return sha
 
     matches = []
-    for filepath in os.listdir('.git/objects/%s' % directory):
+    for filepath in os.listdir(git_dir):
         if re.search('^%s.*' % filename, filepath):
             matches.append(filepath)
 
@@ -34,9 +38,6 @@ def _resolve_object_sha(sha):
 
     if len(matches) == 1:
         filename = matches[0]
-
-    log.debug('sha: %s, directory: %s, filename: %s' %
-              (sha, directory, filename))
 
     return '%s%s' % (directory, filename)
 

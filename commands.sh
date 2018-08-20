@@ -25,9 +25,9 @@ echo "v2: $FILE_V2"
 pytt update-index 100644 "$FILE_V1" "$FILE"
 
 # create a tree object from the staging area (index)
-TREE1=$($CMD write-tree) 
+TREE1=$(pytt write-tree) 
 
-echo "tree1: $TREE"
+echo "tree1: $TREE0"
 
 # save the version 2 file as test.txt in the current index
 pytt update-index 100644 "$FILE_V2" "$FILE"
