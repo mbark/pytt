@@ -6,11 +6,10 @@ exa --tree .git
 
 pytt cat-file dd118c
 
-pytt update-index 100644 file dd118c
+# index + tree
+pytt update-index 100644 dd118c file
 pytt write-tree
 
 exa --tree .git
 
-# TODO: pytt cat-file 
-# TODO: add another file and create a tree with it
-# TODO: commit-tree 1 and 2, 
+pytt cat-file 3ae13c

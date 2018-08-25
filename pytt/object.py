@@ -148,7 +148,7 @@ class Commit:
         This is a convenience class and doesn't describe a git object.
         """
 
-        def __init__(self, name=b'Foo Bar', email=b'foo.bar@email.com', date_s=1531840055, date_timezone=b'+0200'):
+        def __init__(self, name=b'Foo Bar', email=b'foo.bar@email.com', date_s=b'1531840055', date_timezone=b'+0200'):
             self.name = name
             self.email = email
             self.date_s = date_s
@@ -160,7 +160,7 @@ class Commit:
             splits = list(line.split(b' ', start=line.pos, bytealigned=True))
             date_timezone = splits[-1][8:].bytes
             date_s = splits[-2][8:].bytes
-            email = splits[-3][8:].bytes
+            email = splits[-3][16:-8].bytes # strip the < when parsing
             name = reduce(
                 (lambda sum, next: sum + next.bytes), splits[:-3], b'')
 
@@ -170,7 +170,7 @@ class Commit:
             return str(self).encode()
 
         def __str__(self):
-            return b' '.join([self.name, self.email, str(self.date_s).encode(), self.date_timezone]).decode()
+            return b' '.join([self.name, b'<%s>' % self.email, self.date_s, self.date_timezone]).decode()
 
 
 def _read_till(bits, delim):

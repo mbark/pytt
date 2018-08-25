@@ -167,6 +167,7 @@ class Index:
 
             log.debug(mode_b.bytes)
 
+            log.debug(self.sha1)
             sha1 = bytearray.fromhex(self.sha1)
 
             flags = BitArray('')

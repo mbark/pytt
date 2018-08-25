@@ -153,11 +153,15 @@ def write_tree():
 
 def commit_tree(tree, message, parent=None):
     """Create a commit for the tree."""
+    tree = _resolve_object_sha(tree)
+    parent = _resolve_object_sha(parent)
     c = Commit.create(tree, message, parent)
     hash_object(c.pack(), write=True, object_type='commit')
 
 
 def update_ref(ref, sha):
     """Update the ref to the given sha."""
+    sha = _resolve_object_sha(sha)
     with open(_git_path(ref), 'w') as f:
+        log.info('writing %s to %s' % (sha, _git_path(ref)))
         f.write(sha)
