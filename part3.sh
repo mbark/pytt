@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd ~/tmp/foo
+
 # blob
 pytt hash-object -w 'updated content'
 exa --tree .git

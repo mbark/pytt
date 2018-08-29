@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd ~/tmp/foo
+
 # commit
 pytt commit-tree -p 660be1 -m 'our first commit' 3ae13c
 exa --tree .git 
