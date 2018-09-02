@@ -53,13 +53,26 @@ def _index():
         return Index(f.read())
 
 
+def ls_files():
+    """List all files in the index."""
+    idx = _index()
+    for _, entry in idx.entries.items():
+        # why the -1? Well the mode type is 1000, 1010 or 1100 and
+        # permissions 0755 or 0644 so git decides to cut a 0 when
+        # concatenating them.
+        mode = '%s%s' % (bin(entry.mode_type)[
+                         2:-1], oct(entry.mode_permissions)[2:])
+        print('%s %s %s\t%s' % (
+            mode, entry.sha1, entry.stage_flag, entry.name))
+
+
 def cat_file(obj):
     """Print information about the given git object.
 
     This implementation assumes the -p flag is passed, e.g. it always pretty
     prints the object.
     """
-    metadata = ''
+    metadata = b''
 
     if metadata.startswith(b'blob'):
         pass
@@ -79,11 +92,6 @@ def hash_object(obj, write=False, object_type='blob'):
 
     if write:
         pass
-
-
-def ls_files():
-    """List all files in the index."""
-    pass
 
 
 def update_index(mode, sha, filename):

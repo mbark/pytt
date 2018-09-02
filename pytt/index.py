@@ -117,13 +117,14 @@ class Index:
             self.length = flags.read(12).int
 
             log.debug('stage_flag: %s', self.stage_flag)
+            log.debug('length: %s' % self.length)
 
             static_size = struct.calcsize(self.ENTRY_FMT)
 
             self.name = _unpack_slice(
                 '%ss' % self.length, content, offset+static_size)[0].decode()
-            padding = (8 - (static_size + self.length % 8)) % 8
 
+            padding = 8 - (static_size + self.length) % 8
             self.size = static_size + self.length + padding
 
         def new(self, mode, sha, filename):

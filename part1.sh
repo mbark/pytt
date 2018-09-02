@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
 # Setup
-cd ~/tmp
-rm -rf foo
+pipenv shell
+cd ~/tmp && rm -rf foo && mkdir foo && cd foo
 
-mkdir foo
-cd foo
+# Part 1: What is git?
 
 git init
 exa --tree .git
