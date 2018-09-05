@@ -2,6 +2,9 @@
 
 # Part 2: How does it work?
 
+# delar upp i kataloger
+# specifika namn
+
 # ref: master -> commit
 git rev-parse master
 # commit
