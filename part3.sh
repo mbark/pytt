@@ -10,6 +10,7 @@ pytt cat-file 291d4c
 
 # index + tree
 pytt update-index 100644 291d4c quotation.txt
+pytt ls-files
 pytt write-tree
 
 # commit

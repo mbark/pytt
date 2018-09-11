@@ -14,7 +14,6 @@ exa --tree .git
 # git add
 echo '"The problem with quotes on the Internet is that it is hard to verify their authenticity." ~ Abraham Lincoln' > quotation.txt
 git add quotation.txt
-exa --tree .git
 
 # git commit 
 git commit -m 'Add legit quote by e = mc2 dude'

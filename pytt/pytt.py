@@ -14,6 +14,7 @@ log = logging.getLogger('pytt')
 
 
 def _git_path(path):
+    """Return the path to the file in the git-directory."""
     return '.git/%s' % path
 
 
@@ -43,6 +44,7 @@ def _resolve_object_sha(sha):
 
 
 def _object_path(sha):
+    """Return the path to the object with the given sha."""
     sha = _resolve_object_sha(sha)
     return _git_path('objects/%s/%s' % (sha[:2], sha[2:]))
 
@@ -62,17 +64,16 @@ def cat_file(obj):
     with open(_object_path(obj), 'rb') as f:
         content = zlib.decompress(f.read())
 
-    [metadata, obj] = content.split(b'\0', 1)
+    [header, data] = content.split(b'\0', 1)
 
-    if metadata.startswith(b'blob'):
+    if header.startswith(b'blob'):
         try:
-            print(obj.decode())
+            print(data.decode())
         except UnicodeDecodeError:
             log.debug('Unable to decode, printing as is')
-            print(obj)
-        pass
-    elif metadata.startswith(b'tree'):
-        tree_object = Tree.from_string(obj)
+            print(data)
+    elif header.startswith(b'tree'):
+        tree_object = Tree.from_string(data)
         for entry in tree_object.entries:
             mode = entry.mode.decode()
             if mode == '40000':
@@ -83,8 +84,8 @@ def cat_file(obj):
 
             print('%s %s %s\t%s' % (
                 mode, object_type, entry.sha1, entry.name.decode()))
-    elif metadata.startswith(b'commit'):
-        commit_object = Commit.from_string(obj)
+    elif header.startswith(b'commit'):
+        commit_object = Commit.from_string(data)
         print('tree %s' % commit_object.tree.decode())
         for parent in commit_object.parents:
             print('parent %s' % parent.decode())
@@ -103,8 +104,7 @@ def hash_object(data, write=False, object_type='blob'):
     {type} {length}\\0{data}
     """
     header = '%s %d\0' % (object_type, len(data))
-    header = header.encode()
-    content = header + data
+    content = header.encode() + data
 
     sha = hashlib.sha1(content)
     print(sha.hexdigest())
@@ -134,7 +134,8 @@ def update_index(mode, sha, filename):
     """Add the object (blob or tree) to the index with the mode and name."""
     idx = _index()
 
-    idx.append(Index.Entry(new=True, mode=mode, sha=sha, filename=filename))
+    idx.append(Index.Entry(new=True, mode=mode,
+                           sha=_resolve_object_sha(sha), filename=filename))
 
     packed = idx.pack()
     with open(_git_path('index'), 'wb') as f:
@@ -166,5 +167,4 @@ def update_ref(ref, sha):
     """Update the ref to the given sha."""
     sha = _resolve_object_sha(sha)
     with open(_git_path(ref), 'w') as f:
-        log.info('writing %s to %s' % (sha, _git_path(ref)))
         f.write(sha)
