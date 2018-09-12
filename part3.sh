@@ -14,10 +14,11 @@ pytt ls-files
 pytt write-tree
 
 # commit
-pytt commit-tree -p 5b9765 -m 'Oops! Wrong dude, this is the real one!' b785d3
+# bug!
+pytt commit-tree -p 5b9765 -m 'Oops! Wrong dude, this is the real one!' e04427
 
 # ref 
-pytt update-ref refs/heads/master d5d03f
+pytt update-ref refs/heads/master e6a5d5
 
 # it all ties together :tada:
 git log

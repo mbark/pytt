@@ -134,8 +134,10 @@ def update_index(mode, sha, filename):
     """Add the object (blob or tree) to the index with the mode and name."""
     idx = _index()
 
-    idx.append(Index.Entry(new=True, mode=mode,
-                           sha=_resolve_object_sha(sha), filename=filename))
+    idx.append(Index.Entry(new=True,
+                           mode=mode,
+                           sha=_resolve_object_sha(sha),
+                           filename=filename))
 
     packed = idx.pack()
     with open(_git_path('index'), 'wb') as f:
