@@ -52,7 +52,7 @@ def _object_path(sha: str, resolve: bool = True) -> str:
     """Get the path to the object with the given sha.
 
     Keyword args:
-    
+
     resolve -- if the sha should be resolved, set to False if you are creating
     a new object."""
     sha = _resolve_object_sha(sha) if resolve else sha
@@ -88,7 +88,7 @@ def cat_file(obj: str) -> None:
         print(Commit.unpack(data))
 
 
-def hash_object(data: bytes, write=False, object_type="blob") -> None:
+def hash_object(data: bytes, write: bool = False, object_type: str = "blob") -> None:
     """Takes the given data, modifies it to git's format and prints the sha.
 
     {type} {length}\\0{data}
@@ -122,7 +122,8 @@ def update_index(mode: str, sha: str, filename: str) -> None:
     """Add the object (blob or tree) to the index with the mode and name."""
     idx = _index()
 
-    idx.append(Index.Entry.create_new(mode, _resolve_object_sha(sha), filename))
+    idx.append(Index.Entry.create_new(
+        mode, _resolve_object_sha(sha), filename))
 
     with open(_git_path("index"), "wb") as f:
         f.write(idx.pack())
@@ -149,7 +150,7 @@ def write_tree() -> None:
     hash_object(tree_object.pack(), write=True, object_type="tree")
 
 
-def commit_tree(tree: str, message: str, parent=None) -> None:
+def commit_tree(tree: str, message: str, parent: str = None) -> None:
     """With the given tree, message and optionally parent create a new commit object and save it."""
     tree = _resolve_object_sha(tree)
     parent = _resolve_object_sha(parent)

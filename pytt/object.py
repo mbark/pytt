@@ -57,13 +57,14 @@ class Tree:
         """
 
         def __init__(
-            self, name: str, sha: str, mode=None, mode_type=None, mode_permissions=None
+            self, name: str, sha: str, mode: bytes = None, mode_type: int = None, mode_permissions: int = None
         ) -> None:
             """Create a new Entry with the given name, sha and mode. Mode can be given directly
             or as type and permissions separately (e.g. when converting from an Index.Tree"""
             if mode_type and mode_permissions:
                 self.mode = Bits(
-                    bytes=(bin(mode_type)[2:-1] + oct(mode_permissions)[2:]).encode()
+                    bytes=(bin(mode_type)[2:-1] +
+                           oct(mode_permissions)[2:]).encode()
                 ).bytes
             else:
                 self.mode = mode
@@ -210,7 +211,8 @@ class Commit:
             date_timezone = splits[-1][8:].bytes
             date_s = splits[-2][8:].bytes
             email = splits[-3][16:-8].bytes  # strip the < when parsing
-            name = reduce((lambda sum, next: sum + next.bytes), splits[:-3], b"")
+            name = reduce((lambda sum, next: sum + next.bytes),
+                          splits[:-3], b"")
 
             return Commit.Author(name, email, date_s, date_timezone)
 
