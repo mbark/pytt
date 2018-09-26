@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Part 2: How does it work?
+cd ~/tmp/quotations
 
 # HEAD -> ref
 cat .git/HEAD
@@ -9,7 +9,7 @@ cat .git/HEAD
 cat .git/refs/heads/master
 
 # commit
-git cat-file -p 5b9765 
+git cat-file -p 5b9765
 
 # tree
 git cat-file -p 42a0df

@@ -25,7 +25,7 @@ $ ./pytt/cli.py -l info ls-files
 $ git ls-files -s # literally the same
 ```
 
-``` shell
+```shell
 $ ./pytt/cli.py hash-object 'what is up, doc?' -w
 $ ./pytt/cli.py update-index 100644 bd9dbf5aae1a3862dd1526723246b20206e5fc37 afile
 $ git status
@@ -36,7 +36,7 @@ $ git status
 #
 ```
 
-``` shell
+```shell
 $ ./pytt/cli.py hash-object 'what is up, doc?' -w
 $ ./pytt/cli.py update-index 100644 bd9dbf5aae1a3862dd1526723246b20206e5fc37 afile
 $ ./pytt/cli.py write-tree
@@ -45,7 +45,7 @@ $ git cat-file -p 23a890411c06cd26c7e9e86d13d23197b9b06967
 # ...
 ```
 
-``` shell
+```shell
 $ ./pytt/cli.py cat-file $(git rev-parse HEAD)
 # tree e227e810aa558bae7324940e521d031ed35b6cdc
 # author Martin Barksten <martin.barksten@gmail.com> 1531833735 +0200
@@ -54,7 +54,7 @@ $ ./pytt/cli.py cat-file $(git rev-parse HEAD)
 # foo
 ```
 
-``` shell
+```shell
 $ ./pytt/cli.py write-tree
 # 4b825dc642cb6eb9a060e54bf8d69288fbee4904
 $ ./pytt/cli.py commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m 'foo: message' -p $(git rev-parse HEAD)
@@ -63,7 +63,7 @@ $ ./pytt/cli.py cat-file 6f0607cd1706763df9f2200607124386cd89efb9
 # ...
 ```
 
-``` shell
+```shell
 $ ./pytt/cli.py write-tree
 $ ./pytt/cli.py commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m 'foo: message' -p $(git rev-parse HEAD)
 # 6f0607cd1706763df9f2200607124386cd89efb9

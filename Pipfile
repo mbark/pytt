@@ -2,6 +2,9 @@
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 
+[requires]
+python_version = '3.7'
+
 [dev-packages]
 pylint = "*"
 "autopep8" = "*"
@@ -12,3 +15,4 @@ colorlog = "*"
 argparse = "*"
 bitstring = "*"
 "e1839a8" = {path = ".", editable = true}
+pytt = {editable = true, path = "."}
