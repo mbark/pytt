@@ -9,7 +9,7 @@ cat .git/HEAD
 cat .git/refs/heads/master
 
 # commit
-git cat-file -p 5b9765
+git cat-file -p b60cec
 
 # tree
 git cat-file -p 42a0df

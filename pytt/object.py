@@ -19,15 +19,15 @@ class Tree:
     [Tree.Entry]
     """
 
-    def __init__(self, entries=[]):
+    def __init__(self, entries: List[Tree.Entry] = []):
         self.entries = entries
 
     @classmethod
-    def unpack(cls, content: bytes) -> 'Tree':
+    def unpack(cls, content: bytes) -> Tree:
         bits = ConstBitStream(content)
         entries = []
         while bits.pos < bits.length:
-            entries.append(Tree.Entry.unpack(bits))
+            entries.append(Tree.Entry._unpack(bits))
 
         return Tree(entries)
 
@@ -56,23 +56,15 @@ class Tree:
         {mode} {name}\\0{object_sha}
         """
 
-        def __init__(
-            self, name: str, sha: str, mode: bytes = None, mode_type: int = None, mode_permissions: int = None
-        ) -> None:
+        def __init__(self, name: str, sha: str, mode: str) -> None:
             """Create a new Entry with the given name, sha and mode. Mode can be given directly
             or as type and permissions separately (e.g. when converting from an Index.Tree"""
-            if mode_type and mode_permissions:
-                self.mode = Bits(
-                    bytes=(bin(mode_type)[2:-1] +
-                           oct(mode_permissions)[2:]).encode()
-                ).bytes
-            else:
-                self.mode = mode
+            self.mode = mode
             self.name = name
             self.sha = sha
 
         @classmethod
-        def unpack(cls, bits: BitArray) -> 'Tree.Entry':
+        def _unpack(cls, bits: BitArray) -> Tree.Entry:
             mode = _read_till(bits, b" ")
             name = _read_till(bits, b"\0")
             sha = bits.read("bytes:20").hex()
@@ -81,7 +73,7 @@ class Tree:
 
         def pack(self) -> bytes:
             bits = BitArray("")
-            bits.append(Bits(bytes=self.mode))
+            bits.append(Bits(self.mode.encode()))
             bits.append(Bits(b" "))
             bits.append(Bits(self.name.encode()))
             bits.append(Bits(b"\0"))
@@ -123,25 +115,20 @@ class Commit:
         self,
         tree: str,
         parents: List[str],
-        author: Commit.Author,
-        comitter: Commit.Author,
         message: str,
+        author: Commit.Author = None,
+        committer: Commit.Author = None,
     ):
+        log.debug("tree: %s, parents: %s, message: %s" % (tree, parents, message))
         self.tree = tree
-        self.author = author
-        self.committer = comitter
         self.message = message
         self.parents = parents
 
-    @classmethod
-    def create(cls, tree: str, message: str, parent: str = None) -> 'Commit':
-        author = Commit.Author()
-        commiter = author
-        parents = [] if parent is None else [parent.encode()]
-        return Commit(tree.encode(), parents, author, commiter, message.encode())
+        self.author = author if author else Commit.Author()
+        self.committer = committer if committer else Commit.Author()
 
     @classmethod
-    def unpack(cls, content: bytes) -> 'Commit':
+    def unpack(cls, content: bytes) -> Commit:
         bits = ConstBitStream(content)
         lines = list(bits.split(b"\n", bytealigned=True))
 
@@ -161,18 +148,18 @@ class Commit:
         # ignore prefix \n
         message = lines[index + 3][8:].bytes
 
-        return Commit(tree, parents, author, committer, message)
+        return Commit(tree, parents, message, author=author, committer=committer)
 
     def pack(self) -> bytes:
         bits = BitArray("")
-        bits.append(Bits(bytes=b"tree %s\n" % self.tree))
+        bits.append(Bits(bytes=b"tree %s\n" % self.tree.encode()))
 
         for parent in self.parents:
-            bits.append(Bits(bytes=b"parent %s\n" % parent))
+            bits.append(Bits(bytes=b"parent %s\n" % parent.encode()))
 
         bits.append(Bits(bytes=b"author %s\n" % self.author.pack()))
         bits.append(Bits(bytes=b"committer %s\n" % self.committer.pack()))
-        bits.append(Bits(bytes=b"\n%s" % self.message))
+        bits.append(Bits(bytes=b"\n%s" % self.message.encode()))
 
         return bits.bytes
 
@@ -205,14 +192,13 @@ class Commit:
             self.date_timezone = date_timezone
 
         @classmethod
-        def unpack(cls, line: int, prefix: str) -> 'Commit.Author':
+        def unpack(cls, line: int, prefix: str) -> Commit.Author:
             line.bytepos += len("\n%s " % prefix)
             splits = list(line.split(b" ", start=line.pos, bytealigned=True))
             date_timezone = splits[-1][8:].bytes
             date_s = splits[-2][8:].bytes
             email = splits[-3][16:-8].bytes  # strip the < when parsing
-            name = reduce((lambda sum, next: sum + next.bytes),
-                          splits[:-3], b"")
+            name = reduce((lambda sum, next: sum + next.bytes), splits[:-3], b"")
 
             return Commit.Author(name, email, date_s, date_timezone)
 

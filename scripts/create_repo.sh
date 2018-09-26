@@ -8,6 +8,8 @@ export GIT_AUTHOR_DATE="Thu, 07 Apr 2005 22:13:13 +0200"
 export GIT_COMMITTER_DATE="Thu, 07 Apr 2005 22:13:13 +0200"
 
 git init
+git config user.name "Foo Bar"
+git config user.email "foo.bar@email.com"
 
 # git add
 echo '"The problem with quotes on the Internet is that it is hard to verify their authenticity." ~ Abraham Lincoln' >quotation.txt

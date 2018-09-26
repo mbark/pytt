@@ -95,7 +95,7 @@ def hash_object(data: bytes, write: bool = False, object_type: str = "blob") -> 
 
     Keyword args:
     write -- if true also saves the object to the corresponding file.
-    object_type -- blob, tree or commit 
+    object_type -- blob, tree or commit
     """
     header = "%s %d" % (object_type, len(data))
     content = b"%s\0%s" % (header.encode(), data)
@@ -114,7 +114,7 @@ def hash_object(data: bytes, write: bool = False, object_type: str = "blob") -> 
 def ls_files() -> None:
     """List all files in the index."""
     idx = _index()
-    for _, entry in idx.entries.items():
+    for entry in idx.get_entries():
         print(entry)
 
 
@@ -122,29 +122,24 @@ def update_index(mode: str, sha: str, filename: str) -> None:
     """Add the object (blob or tree) to the index with the mode and name."""
     idx = _index()
 
-    idx.append(Index.Entry.create_new(
-        mode, _resolve_object_sha(sha), filename))
+    idx.add_entry(Index.Entry.create(mode, _resolve_object_sha(sha), filename))
 
     with open(_git_path("index"), "wb") as f:
         f.write(idx.pack())
 
 
-def write_tree() -> None:
-    """Read the current index and create a new Tree object.
+def _index_entry_mode(entry: Index.Entry) -> str:
+    """Convert an index entry's mode_type and mode_permissions to a single mode string."""
+    return "%s%s" % (bin(entry.mode_type)[2:-1], oct(entry.mode_permissions)[2:])
 
-    For all entries in the index convert them to a tree entry and store in the new tree."""
+
+def write_tree() -> None:
+    """Read the current index and create a new Tree object."""
     idx = _index()
 
     tree_entries = []
-    for _, entry in idx.entries.items():
-        tree_entries.append(
-            Tree.Entry(
-                mode_type=entry.mode_type,
-                mode_permissions=entry.mode_permissions,
-                sha=entry.sha,
-                name=entry.name,
-            )
-        )
+    for entry in idx.get_entries():
+        tree_entries.append(Tree.Entry(entry.name, entry.sha, _index_entry_mode(entry)))
 
     tree_object = Tree(tree_entries)
     hash_object(tree_object.pack(), write=True, object_type="tree")
@@ -154,7 +149,7 @@ def commit_tree(tree: str, message: str, parent: str = None) -> None:
     """With the given tree, message and optionally parent create a new commit object and save it."""
     tree = _resolve_object_sha(tree)
     parent = _resolve_object_sha(parent)
-    c = Commit.create(tree, message, parent)
+    c = Commit(tree, [parent], message)
     hash_object(c.pack(), write=True, object_type="commit")
 
 

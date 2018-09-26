@@ -3,12 +3,13 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 
 [requires]
-python_version = '3.5'
+python_version = '3.7'
 
 [dev-packages]
 pylint = "*"
 "autopep8" = "*"
 rope = "*"
+pytest = "*"
 
 [packages]
 colorlog = "*"

@@ -6,7 +6,7 @@ import math
 import os
 import struct
 from collections import namedtuple
-from typing import List
+from typing import List, Mapping
 
 from bitstring import BitArray, Bits, ConstBitStream
 
@@ -29,7 +29,7 @@ class Index:
         size = struct.calcsize(self.FMT)
         self.header, self.version, self.file_count = _unpack_slice(self.FMT, content)
 
-        self.entries = {}
+        self.entries: Mapping[str, Index.Entry] = {}
         offset = size
         for _ in range(0, self.file_count):
             entry = Index.Entry(new=False, content=content, offset=offset)
@@ -41,8 +41,11 @@ class Index:
         # The last 20 bytes are always a checksum
         self.checksum = ConstBitStream(content[-20:])
 
-    def append(self, new_entry: Index.Entry) -> None:
+    def add_entry(self, new_entry: Index.Entry) -> None:
         self.entries[new_entry.name] = new_entry
+
+    def get_entries(self) -> List[Index.Entry]:
+        return self.entries.values()
 
     def pack(self) -> bytes:
         packed = BitArray("")
@@ -76,9 +79,9 @@ class Index:
 
         def __init__(self, new=False, **kwargs) -> None:
             if new:
-                self.new(**kwargs)
+                self._new(**kwargs)
             else:
-                self.unpack(**kwargs)
+                self._unpack(**kwargs)
 
         def __eq__(self, other) -> bool:
             return self.name == other.name
@@ -94,11 +97,11 @@ class Index:
             return "%s %s %s\t%s" % (mode, self.sha, self.stage_flag, self.name)
 
         @classmethod
-        def create_new(cls, mode: str, sha: str, filename: str) -> Index.Entry:
+        def create(cls, mode: str, sha: str, filename: str) -> Index.Entry:
             """Create a new Tree Entry from the given mode, sha and filename."""
             return Index.Entry(new=True, mode=mode, sha=sha, filename=filename)
 
-        def unpack(self, content: bytes, offset: int) -> None:
+        def _unpack(self, content: bytes, offset: int) -> None:
             unpacked = _unpack_slice(self.ENTRY_FMT, content, offset)
 
             StaticEntry = namedtuple(
@@ -125,11 +128,10 @@ class Index:
 
             log.debug("device: %s, inode: %s", self.device, self.inode)
 
-            self.mode = static.mode
             mode = ConstBitStream(static.mode)
-            self.mode_type = mode.read(4).uint
+            self.mode_type: int = mode.read(4).uint
             mode.pos += 3  # 3 unused bytes to throw away
-            self.mode_permissions = mode.read(9).uint
+            self.mode_permissions: int = mode.read(9).uint
 
             log.debug(
                 "mode_type: %s, mode_permissions: %s",
@@ -140,7 +142,7 @@ class Index:
             self.uid = static.uid
             self.gid = static.gid
             self.file_size = static.file_size
-            self.sha = ConstBitStream(static.sha).hex
+            self.sha: str = ConstBitStream(static.sha).hex
 
             log.debug("sha: %s", self.sha)
 
@@ -155,14 +157,14 @@ class Index:
 
             static_size = struct.calcsize(self.ENTRY_FMT)
 
-            self.name = _unpack_slice(
+            self.name: str = _unpack_slice(
                 "%ss" % self.length, content, offset + static_size
             )[0].decode()
 
             padding = 8 - (static_size + self.length) % 8
             self.size = static_size + self.length + padding
 
-        def new(self, mode: str, sha: str, filename: str) -> None:
+        def _new(self, mode: str, sha: str, filename: str) -> None:
             def split_time(time):
                 frac = math.modf(stat.st_ctime)
                 return (int(frac[1]), int(frac[0] * 1000 * 1000 * 1000))
@@ -178,13 +180,13 @@ class Index:
             # the inode can be too large to pack so we just take the first 4 bytes and save them
             self.inode = struct.unpack("i", struct.pack("l", stat.st_ino)[:4])[0]
 
-            self.mode_type = int("%s0" % mode[:3], 2)
-            self.mode_permissions = int(mode[3:], 8)
+            self.mode_type: int = int("%s0" % mode[:3], 2)
+            self.mode_permissions: int = int(mode[3:], 8)
 
             self.uid = stat.st_uid
             self.gid = stat.st_gid
             self.file_size = stat.st_size
-            self.sha = sha
+            self.sha: str = sha
 
             # We are a bit lazy and cheat with these flags by assuming they are all 0
             self.assume_valid = 0
@@ -192,7 +194,7 @@ class Index:
             self.stage_flag = 0
             self.length = len(filename)
 
-            self.name = filename
+            self.name: str = filename
 
         def pack(self) -> bytes:
             mode_b = BitArray("")
