@@ -23,7 +23,7 @@ class Tree:
         self.entries = entries
 
     @classmethod
-    def unpack(cls, content: bytes) -> Tree:
+    def unpack(cls, content: bytes) -> 'Tree':
         bits = ConstBitStream(content)
         entries = []
         while bits.pos < bits.length:
@@ -72,7 +72,7 @@ class Tree:
             self.sha = sha
 
         @classmethod
-        def unpack(cls, bits: BitArray) -> Tree.Entry:
+        def unpack(cls, bits: BitArray) -> 'Tree.Entry':
             mode = _read_till(bits, b" ")
             name = _read_till(bits, b"\0")
             sha = bits.read("bytes:20").hex()
@@ -134,14 +134,14 @@ class Commit:
         self.parents = parents
 
     @classmethod
-    def create(cls, tree: str, message: str, parent: str = None) -> Commit:
+    def create(cls, tree: str, message: str, parent: str = None) -> 'Commit':
         author = Commit.Author()
         commiter = author
         parents = [] if parent is None else [parent.encode()]
         return Commit(tree.encode(), parents, author, commiter, message.encode())
 
     @classmethod
-    def unpack(cls, content: bytes) -> Commit:
+    def unpack(cls, content: bytes) -> 'Commit':
         bits = ConstBitStream(content)
         lines = list(bits.split(b"\n", bytealigned=True))
 
@@ -205,7 +205,7 @@ class Commit:
             self.date_timezone = date_timezone
 
         @classmethod
-        def unpack(cls, line: int, prefix: str) -> Commit.Author:
+        def unpack(cls, line: int, prefix: str) -> 'Commit.Author':
             line.bytepos += len("\n%s " % prefix)
             splits = list(line.split(b" ", start=line.pos, bytealigned=True))
             date_timezone = splits[-1][8:].bytes
